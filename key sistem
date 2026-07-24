@@ -1,0 +1,305 @@
+--[[
+    🔐 KEY SYSTEM - Loader
+    Creato da: Lucille-creator
+    
+    ISTRUZIONI:
+    1. Metti il tuo webhook Discord qui sotto
+    2. Aggiungi le chiavi nell'array keys[]
+    3. Carica su GitHub
+    4. Il link da condividere sarà il raw di QUESTO file
+]]
+
+local config = {
+    -- 🔗 LINK al tuo script principale (quello offuscato)
+    scriptUrl = "https://raw.githubusercontent.com/Lucille-creator/esp-misc-uni-roblox-lucille-F.P./refs/heads/main/obfuscated_script-1784886062826.lua",
+    
+    -- 🎯 Metti QUI le chiavi generate
+    keys = {
+        ["LUX-ABCD-1234-EFGH"] = true,
+        ["LUX-WXYZ-5678-IJKL"] = true
+        -- ↑ SOSTITUISCI con le tue chiavi generate!
+    },
+    
+    -- 📡 WEBHOOK DISCORD (OPZIONALE)
+    -- Per ricevere notifiche quando qualcuno usa una key
+    webhookUrl = "",  -- Es: "https://discord.com/api/webhooks/123456/abc-def"
+    
+    -- ⚙️ ALTRE IMPOSTAZIONI
+    enableDiscordLog = false,  -- Metti true per attivare log Discord
+    enableHWID = true,         -- Blocca la key a un solo PC
+    title = "🔐 KEY SYSTEM",   -- Titolo della finestra
+    subtitle = "Inserisci la chiave per sbloccare lo script"
+}
+
+-- NON MODIFICARE QUI SOTTO
+local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
+local UserInputService = game:GetService("UserInputService")
+local StarterGui = game:GetService("StarterGui")
+local CoreGui = game:GetService("CoreGui")
+local player = Players.LocalPlayer
+local hwid = ""
+
+-- Ottiene un ID unico del PC
+local function getHWID()
+    if not config.enableHWID then return "off" end
+    local success, result = pcall(function()
+        return game:GetService("RbxAnalyticsService"):GetClientId()
+    end)
+    if success and result ~= "" then
+        return HttpService:MD5(result)
+    end
+    return HttpService:MD5(tostring(player.UserId))
+end
+
+-- Invia log su Discord
+local function sendLog(type, key)
+    if not config.enableDiscordLog or config.webhookUrl == "" then return end
+    
+    local embed = {
+        ["embeds"] = {{
+            ["title"] = "🔑 Accesso Key System",
+            ["color"] = type == "success" and 3066993 or 15158332,
+            ["fields"] = {
+                {["name"] = "👤 Utente", ["value"] = player.Name, ["inline"] = true},
+                {["name"] = "✅ Stato", ["value"] = type == "success" and "Successo" or "Negato", ["inline"] = true},
+                {["name"] = "🔑 Key", ["value"] = "||" .. key .. "||", ["inline"] = false},
+                {["name"] = "💻 HWID", ["value"] = "||" .. hwid .. "||", ["inline"] = false},
+                {["name"] = "📅 Data", ["value"] = os.date("%d/%m/%Y %H:%M:%S"), ["inline"] = false}
+            }
+        }}
+    }
+    
+    pcall(function()
+        syn.request({
+            Url = config.webhookUrl,
+            Method = "POST",
+            Headers = {["Content-Type"] = "application/json"},
+            Body = HttpService:JSONEncode(embed)
+        })
+    end)
+end
+
+-- Verifica la key
+local function verifyKey(key)
+    key = key:upper():gsub("%s+", "")
+    hwid = getHWID()
+    
+    if config.keys[key] then
+        sendLog("success", key)
+        return true
+    end
+    
+    sendLog("denied", key)
+    return false
+end
+
+-- Crea l'interfaccia grafica
+local function createUI()
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "KeySystemGUI"
+    screenGui.ResetOnSpawn = false
+    screenGui.Parent = CoreGui
+    
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 400, 0, 300)
+    frame.Position = UDim2.new(0.5, -200, 0.5, -150)
+    frame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+    frame.BackgroundTransparency = 0.05
+    frame.BorderSizePixel = 0
+    frame.Active = true
+    frame.Draggable = true
+    frame.Parent = screenGui
+    
+    -- Bordo colorato
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(100, 50, 200)
+    stroke.Thickness = 2
+    stroke.Parent = frame
+    
+    -- Angoli arrotondati
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = frame
+    
+    -- Barra titolo
+    local titleBar = Instance.new("Frame")
+    titleBar.Size = UDim2.new(1, 0, 0, 45)
+    titleBar.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+    titleBar.BorderSizePixel = 0
+    titleBar.Parent = frame
+    
+    local titleCorner = Instance.new("UICorner")
+    titleCorner.CornerRadius = UDim.new(0, 8)
+    titleCorner.Parent = titleBar
+    
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Size = UDim2.new(1, -10, 1, 0)
+    titleLabel.Position = UDim2.new(0, 10, 0, 0)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Text = config.title
+    titleLabel.TextColor3 = Color3.fromRGB(200, 200, 255)
+    titleLabel.TextSize = 18
+    titleLabel.Font = Enum.Font.GothamBold
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    titleLabel.Parent = titleBar
+    
+    -- Testo descrizione
+    local desc = Instance.new("TextLabel")
+    desc.Size = UDim2.new(1, -40, 0, 25)
+    desc.Position = UDim2.new(0, 20, 0, 55)
+    desc.BackgroundTransparency = 1
+    desc.Text = config.subtitle
+    desc.TextColor3 = Color3.fromRGB(150, 150, 180)
+    desc.TextSize = 13
+    desc.Font = Enum.Font.Gotham
+    desc.Parent = frame
+    
+    -- Campo input
+    local textBox = Instance.new("TextBox")
+    textBox.Size = UDim2.new(1, -40, 0, 40)
+    textBox.Position = UDim2.new(0, 20, 0, 90)
+    textBox.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+    textBox.PlaceholderText = "LUX-XXXX-XXXX-XXXX"
+    textBox.Text = ""
+    textBox.TextColor3 = Color3.fromRGB(200, 200, 220)
+    textBox.TextSize = 16
+    textBox.Font = Enum.Font.GothamMono
+    textBox.ClearTextOnFocus = false
+    textBox.BorderSizePixel = 0
+    textBox.Parent = frame
+    
+    local inputCorner = Instance.new("UICorner")
+    inputCorner.CornerRadius = UDim.new(0, 6)
+    inputCorner.Parent = textBox
+    
+    -- Testo stato
+    local status = Instance.new("TextLabel")
+    status.Size = UDim2.new(1, -40, 0, 25)
+    status.Position = UDim2.new(0, 20, 0, 140)
+    status.BackgroundTransparency = 1
+    status.Text = ""
+    status.TextColor3 = Color3.fromRGB(200, 200, 220)
+    status.TextSize = 13
+    status.Font = Enum.Font.Gotham
+    status.Parent = frame
+    
+    -- Bottone verifica
+    local verifyBtn = Instance.new("TextButton")
+    verifyBtn.Size = UDim2.new(1, -80, 0, 40)
+    verifyBtn.Position = UDim2.new(0, 40, 0, 175)
+    verifyBtn.BackgroundColor3 = Color3.fromRGB(100, 50, 200)
+    verifyBtn.Text = "🔑 VERIFICA"
+    verifyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    verifyBtn.TextSize = 16
+    verifyBtn.Font = Enum.Font.GothamBold
+    verifyBtn.BorderSizePixel = 0
+    verifyBtn.Parent = frame
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 6)
+    btnCorner.Parent = verifyBtn
+    
+    -- Bottone acquisto
+    local buyBtn = Instance.new("TextButton")
+    buyBtn.Size = UDim2.new(1, -80, 0, 35)
+    buyBtn.Position = UDim2.new(0, 40, 0, 230)
+    buyBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
+    buyBtn.Text = "💳 ACQUISTA CHIAVE"
+    buyBtn.TextColor3 = Color3.fromRGB(150, 150, 200)
+    buyBtn.TextSize = 14
+    buyBtn.Font = Enum.Font.Gotham
+    buyBtn.BorderSizePixel = 0
+    buyBtn.Parent = frame
+    
+    local buyCorner = Instance.new("UICorner")
+    buyCorner.CornerRadius = UDim.new(0, 6)
+    buyCorner.Parent = buyBtn
+    
+    -- Bottone chiudi
+    local closeBtn = Instance.new("TextButton")
+    closeBtn.Size = UDim2.new(0, 30, 0, 30)
+    closeBtn.Position = UDim2.new(1, -35, 0, 7)
+    closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    closeBtn.Text = "✕"
+    closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    closeBtn.TextSize = 16
+    closeBtn.Font = Enum.Font.GothamBold
+    closeBtn.BorderSizePixel = 0
+    closeBtn.Parent = titleBar
+    
+    local closeCorner = Instance.new("UICorner")
+    closeCorner.CornerRadius = UDim.new(0, 4)
+    closeCorner.Parent = closeBtn
+    
+    -- Evento bottone verifica
+    verifyBtn.MouseButton1Click:Connect(function()
+        local key = textBox.Text
+        
+        if key == "" then
+            status.Text = "⚠️ Inserisci una chiave"
+            status.TextColor3 = Color3.fromRGB(255, 150, 50)
+            return
+        end
+        
+        status.Text = "⏳ Verifico..."
+        status.TextColor3 = Color3.fromRGB(200, 200, 100)
+        verifyBtn.Text = "..."
+        verifyBtn.Active = false
+        
+        task.wait(0.5)
+        
+        if verifyKey(key) then
+            status.Text = "✅ Chiave valida! Carico lo script..."
+            status.TextColor3 = Color3.fromRGB(50, 255, 50)
+            stroke.Color = Color3.fromRGB(50, 255, 50)
+            
+            task.wait(1)
+            screenGui:Destroy()
+            
+            -- Carica lo script principale
+            local success, err = pcall(function()
+                loadstring(game:HttpGet(config.scriptUrl))()
+            end)
+            
+            if not success then
+                StarterGui:SetCore("SendNotification", {
+                    Title = "Errore",
+                    Text = "Errore nel caricamento: " .. tostring(err),
+                    Duration = 5
+                })
+            end
+        else
+            status.Text = "❌ CHIAVE NON VALIDA!"
+            status.TextColor3 = Color3.fromRGB(255, 50, 50)
+            stroke.Color = Color3.fromRGB(255, 50, 50)
+            verifyBtn.Text = "🔑 VERIFICA"
+            verifyBtn.Active = true
+            
+            task.wait(2)
+            stroke.Color = Color3.fromRGB(100, 50, 200)
+        end
+    end)
+    
+    -- Evento bottone acquisto
+    buyBtn.MouseButton1Click:Connect(function()
+        -- CAMBIA QUESTO LINK col tuo Discord/negozio
+        local buyLink = "https://discord.gg/TUO_DISCORD"
+        pcall(function()
+            setclipboard(buyLink)
+        end)
+        StarterGui:SetCore("SendNotification", {
+            Title = "Link copiato!",
+            Text = "Il link per l'acquisto è stato copiato",
+            Duration = 5
+        })
+    end)
+    
+    -- Evento bottone chiudi
+    closeBtn.MouseButton1Click:Connect(function()
+        screenGui:Destroy()
+    end)
+end
+
+-- Avvia il sistema
+createUI()
