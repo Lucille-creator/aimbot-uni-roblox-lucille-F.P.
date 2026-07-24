@@ -1,276 +1,526 @@
---[[
-    🔐 KEY SYSTEM - Loader
-    Creato da: Lucille-creator
-]]
+-- Services
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
-local config = {
-    -- 🔗 LINK al tuo script principale
-    scriptUrl = "https://raw.githubusercontent.com/Lucille-creator/aimbot-uni-roblox-lucille-F.P./refs/heads/main/Aimbot.lua",
-    
-    -- 🎯 Chiavi valide (genera con Python)
-    keys = {
-        ["LUX-M5AJ-Q4GS-FRCS"] = true,
-        ["LUX-ESEMPIO-1234"] = true
-    },
-    
-    -- 📡 WEBHOOK DISCORD (OPZIONALE)
-    webhookUrl = "https://discord.com/api/webhooks/1530192779572023377/p8-69Onex3e5N_JghDEgadt7gig5QV760x2AqGJ_tgueBxA9SMzhT2TwG1iLIsu8oBuN",
-    enableDiscordLog = false,
-    
-    -- ⚙️ IMPOSTAZIONI
-    enableHWID = true,
-    buyLink = "https://discord.gg/TUO_DISCORD"
+local player = Players.LocalPlayer
+
+-- Configuration
+local CONFIG = {
+    ValidKeys = {"LUX-M5AJ-Q4GS-FRCS", "LUX-6YGE-55ZI-3P0L", "LUX-18XW-QU7T-9ZVD"},
+    WebhookURL = "https://discord.com/api/webhooks/1530192779572023377/p8-69Onex3e5N_JghDEgadt7gig5QV760x2AqGJ_tgueBxA9SMzhT2TwG1iLIsu8oBuN",
+    ScriptURL = "https://raw.githubusercontent.com/Lucille-creator/aimbot-uni-roblox-lucille-F.P./refs/heads/main/Aimbot.lua",
+    BuyLink = "https://discord.gg/TUO_DISCORD",
+    Title = "Lucille Hub",
+    Subtitle = "Key System v2.0"
 }
 
-local Players = game:GetService("Players")
-local HttpService = game:GetService("HttpService")
-local UserInputService = game:GetService("UserInputService")
-local StarterGui = game:GetService("StarterGui")
-local player = Players.LocalPlayer
-local hwid = ""
+-- Rimuovi GUI esistente
+local existingGui = player:WaitForChild("PlayerGui"):FindFirstChild("KeySystemGUI")
+if existingGui then existingGui:Destroy() end
 
-local function getHWID()
-    if not config.enableHWID then return "off" end
-    local success, result = pcall(function()
-        return game:GetService("RbxAnalyticsService"):GetClientId()
-    end)
-    if success and result ~= "" then
-        return HttpService:MD5(result)
+-- Create ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "KeySystemGUI"
+screenGui.ResetOnSpawn = false
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.IgnoreGuiInset = true
+screenGui.Parent = player.PlayerGui
+
+-- Background Blur Overlay
+local blurOverlay = Instance.new("Frame")
+blurOverlay.Name = "BlurOverlay"
+blurOverlay.Size = UDim2.new(1, 0, 1, 0)
+blurOverlay.Position = UDim2.new(0, 0, 0, 0)
+blurOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+blurOverlay.BackgroundTransparency = 1
+blurOverlay.BorderSizePixel = 0
+blurOverlay.ZIndex = 1
+blurOverlay.Parent = screenGui
+
+-- Main Frame
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 450, 0, 350)
+mainFrame.Position = UDim2.new(0.5, -225, 0.5, -175)
+mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+mainFrame.BorderSizePixel = 0
+mainFrame.ZIndex = 2
+mainFrame.Active = true
+mainFrame.Parent = screenGui
+
+-- Main Frame Corner
+local mainCorner = Instance.new("UICorner")
+mainCorner.CornerRadius = UDim.new(0, 15)
+mainCorner.Parent = mainFrame
+
+-- Gradient background
+local gradient = Instance.new("UIGradient")
+gradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(35, 35, 45)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 25))
+})
+gradient.Rotation = 135
+gradient.Parent = mainFrame
+
+-- Border stroke
+local mainStroke = Instance.new("UIStroke")
+mainStroke.Color = Color3.fromRGB(100, 80, 255)
+mainStroke.Thickness = 2
+mainStroke.Transparency = 0.3
+mainStroke.Parent = mainFrame
+
+-- Title Bar (DRAGGABLE)
+local titleBar = Instance.new("Frame")
+titleBar.Name = "TitleBar"
+titleBar.Size = UDim2.new(1, 0, 0, 55)
+titleBar.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+titleBar.BorderSizePixel = 0
+titleBar.ZIndex = 3
+titleBar.Active = true
+titleBar.Parent = mainFrame
+
+local titleBarCorner = Instance.new("UICorner")
+titleBarCorner.CornerRadius = UDim.new(0, 15)
+titleBarCorner.Parent = titleBar
+
+-- Nascondi angoli inferiori della title bar
+local titleBarFix = Instance.new("Frame")
+titleBarFix.Size = UDim2.new(1, 0, 0, 15)
+titleBarFix.Position = UDim2.new(0, 0, 1, -15)
+titleBarFix.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+titleBarFix.BorderSizePixel = 0
+titleBarFix.ZIndex = 3
+titleBarFix.Parent = titleBar
+
+-- Icon
+local iconLabel = Instance.new("TextLabel")
+iconLabel.Size = UDim2.new(0, 40, 0, 40)
+iconLabel.Position = UDim2.new(0, 12, 0.5, -20)
+iconLabel.BackgroundTransparency = 1
+iconLabel.Text = "🔑"
+iconLabel.TextSize = 28
+iconLabel.Font = Enum.Font.GothamBold
+iconLabel.ZIndex = 4
+iconLabel.Parent = titleBar
+
+-- Title Text
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, -100, 0, 25)
+titleLabel.Position = UDim2.new(0, 60, 0, 8)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = CONFIG.Title
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.TextSize = 20
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+titleLabel.ZIndex = 4
+titleLabel.Parent = titleBar
+
+-- Subtitle
+local subtitleLabel = Instance.new("TextLabel")
+subtitleLabel.Size = UDim2.new(1, -100, 0, 15)
+subtitleLabel.Position = UDim2.new(0, 60, 0, 32)
+subtitleLabel.BackgroundTransparency = 1
+subtitleLabel.Text = CONFIG.Subtitle
+subtitleLabel.TextColor3 = Color3.fromRGB(150, 150, 170)
+subtitleLabel.TextSize = 12
+subtitleLabel.Font = Enum.Font.Gotham
+subtitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+subtitleLabel.ZIndex = 4
+subtitleLabel.Parent = titleBar
+
+-- Close Button
+local closeButton = Instance.new("TextButton")
+closeButton.Size = UDim2.new(0, 35, 0, 35)
+closeButton.Position = UDim2.new(1, -45, 0.5, -17)
+closeButton.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
+closeButton.BorderSizePixel = 0
+closeButton.Text = "✕"
+closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeButton.TextSize = 16
+closeButton.Font = Enum.Font.GothamBold
+closeButton.ZIndex = 4
+closeButton.AutoButtonColor = false
+closeButton.Parent = titleBar
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(0, 8)
+closeCorner.Parent = closeButton
+
+-- Welcome Text
+local welcomeText = Instance.new("TextLabel")
+welcomeText.Size = UDim2.new(1, -40, 0, 25)
+welcomeText.Position = UDim2.new(0, 20, 0, 75)
+welcomeText.BackgroundTransparency = 1
+welcomeText.Text = "Welcome, " .. player.Name .. "!"
+welcomeText.TextColor3 = Color3.fromRGB(255, 255, 255)
+welcomeText.TextSize = 18
+welcomeText.Font = Enum.Font.GothamBold
+welcomeText.TextXAlignment = Enum.TextXAlignment.Left
+welcomeText.ZIndex = 3
+welcomeText.Parent = mainFrame
+
+-- Info Text
+local infoText = Instance.new("TextLabel")
+infoText.Size = UDim2.new(1, -40, 0, 40)
+infoText.Position = UDim2.new(0, 20, 0, 105)
+infoText.BackgroundTransparency = 1
+infoText.Text = "Enter your key below to access the script.\nDon't have a key? Click 'Get Key' to obtain one."
+infoText.TextColor3 = Color3.fromRGB(180, 180, 200)
+infoText.TextSize = 13
+infoText.Font = Enum.Font.Gotham
+infoText.TextXAlignment = Enum.TextXAlignment.Left
+infoText.TextYAlignment = Enum.TextYAlignment.Top
+infoText.TextWrapped = true
+infoText.ZIndex = 3
+infoText.Parent = mainFrame
+
+-- TextBox Container
+local inputContainer = Instance.new("Frame")
+inputContainer.Size = UDim2.new(1, -40, 0, 50)
+inputContainer.Position = UDim2.new(0, 20, 0, 160)
+inputContainer.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+inputContainer.BorderSizePixel = 0
+inputContainer.ZIndex = 3
+inputContainer.Parent = mainFrame
+
+local inputContainerCorner = Instance.new("UICorner")
+inputContainerCorner.CornerRadius = UDim.new(0, 10)
+inputContainerCorner.Parent = inputContainer
+
+local inputStroke = Instance.new("UIStroke")
+inputStroke.Color = Color3.fromRGB(80, 80, 100)
+inputStroke.Thickness = 1
+inputStroke.Transparency = 0.5
+inputStroke.Parent = inputContainer
+
+-- Key Input TextBox
+local keyInput = Instance.new("TextBox")
+keyInput.Name = "KeyInput"
+keyInput.Size = UDim2.new(1, -20, 1, 0)
+keyInput.Position = UDim2.new(0, 15, 0, 0)
+keyInput.BackgroundTransparency = 1
+keyInput.Text = ""
+keyInput.PlaceholderText = "Enter your key here..."
+keyInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+keyInput.PlaceholderColor3 = Color3.fromRGB(120, 120, 140)
+keyInput.TextSize = 15
+keyInput.Font = Enum.Font.Gotham
+keyInput.TextXAlignment = Enum.TextXAlignment.Left
+keyInput.ZIndex = 10
+keyInput.ClearTextOnFocus = false
+keyInput.TextEditable = true
+keyInput.Active = true
+keyInput.Selectable = true
+keyInput.MultiLine = false
+keyInput.Parent = inputContainer
+
+-- Submit Button
+local submitButton = Instance.new("TextButton")
+submitButton.Name = "SubmitButton"
+submitButton.Size = UDim2.new(0.5, -25, 0, 45)
+submitButton.Position = UDim2.new(0, 20, 0, 225)
+submitButton.BackgroundColor3 = Color3.fromRGB(80, 180, 100)
+submitButton.BorderSizePixel = 0
+submitButton.Text = "✓  Submit Key"
+submitButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+submitButton.TextSize = 15
+submitButton.Font = Enum.Font.GothamBold
+submitButton.ZIndex = 3
+submitButton.AutoButtonColor = false
+submitButton.Parent = mainFrame
+
+local submitCorner = Instance.new("UICorner")
+submitCorner.CornerRadius = UDim.new(0, 10)
+submitCorner.Parent = submitButton
+
+-- Get Key Button
+local getKeyButton = Instance.new("TextButton")
+getKeyButton.Name = "GetKeyButton"
+getKeyButton.Size = UDim2.new(0.5, -25, 0, 45)
+getKeyButton.Position = UDim2.new(0.5, 5, 0, 225)
+getKeyButton.BackgroundColor3 = Color3.fromRGB(100, 120, 255)
+getKeyButton.BorderSizePixel = 0
+getKeyButton.Text = "🔗  Get Key"
+getKeyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+getKeyButton.TextSize = 15
+getKeyButton.Font = Enum.Font.GothamBold
+getKeyButton.ZIndex = 3
+getKeyButton.AutoButtonColor = false
+getKeyButton.Parent = mainFrame
+
+local getKeyCorner = Instance.new("UICorner")
+getKeyCorner.CornerRadius = UDim.new(0, 10)
+getKeyCorner.Parent = getKeyButton
+
+-- Status Text
+local statusText = Instance.new("TextLabel")
+statusText.Name = "StatusText"
+statusText.Size = UDim2.new(1, -40, 0, 25)
+statusText.Position = UDim2.new(0, 20, 0, 285)
+statusText.BackgroundTransparency = 1
+statusText.Text = ""
+statusText.TextColor3 = Color3.fromRGB(200, 200, 200)
+statusText.TextSize = 13
+statusText.Font = Enum.Font.GothamSemibold
+statusText.TextXAlignment = Enum.TextXAlignment.Center
+statusText.ZIndex = 3
+statusText.Parent = mainFrame
+
+-- Footer
+local footerText = Instance.new("TextLabel")
+footerText.Size = UDim2.new(1, -40, 0, 20)
+footerText.Position = UDim2.new(0, 20, 1, -25)
+footerText.BackgroundTransparency = 1
+footerText.Text = "© 2026 " .. CONFIG.Title .. " - All Rights Reserved"
+footerText.TextColor3 = Color3.fromRGB(100, 100, 120)
+footerText.TextSize = 10
+footerText.Font = Enum.Font.Gotham
+footerText.ZIndex = 3
+footerText.Parent = mainFrame
+
+-- ============ DRAGGING SYSTEM ============
+local dragging = false
+local dragInput, dragStart, startPos
+
+titleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainFrame.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
     end
-    return HttpService:MD5(tostring(player.UserId))
+end)
+
+titleBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        mainFrame.Position = UDim2.new(
+            startPos.X.Scale, startPos.X.Offset + delta.X,
+            startPos.Y.Scale, startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+-- ============ HOVER EFFECTS ============
+local function createHoverEffect(button, normalColor, hoverColor)
+    button.MouseEnter:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = hoverColor}):Play()
+    end)
+    button.MouseLeave:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = normalColor}):Play()
+    end)
 end
 
-local function sendLog(type, key)
-    if not config.enableDiscordLog or config.webhookUrl == "" then return end
-    local embed = {
+createHoverEffect(submitButton, Color3.fromRGB(80, 180, 100), Color3.fromRGB(100, 210, 120))
+createHoverEffect(getKeyButton, Color3.fromRGB(100, 120, 255), Color3.fromRGB(130, 150, 255))
+createHoverEffect(closeButton, Color3.fromRGB(220, 60, 60), Color3.fromRGB(255, 80, 80))
+
+-- Focus effect on input
+keyInput.Focused:Connect(function()
+    TweenService:Create(inputStroke, TweenInfo.new(0.2), {
+        Color = Color3.fromRGB(100, 120, 255),
+        Transparency = 0
+    }):Play()
+end)
+
+keyInput.FocusLost:Connect(function()
+    TweenService:Create(inputStroke, TweenInfo.new(0.2), {
+        Color = Color3.fromRGB(80, 80, 100),
+        Transparency = 0.5
+    }):Play()
+end)
+
+-- ============ STATUS FUNCTIONS ============
+local function setStatus(text, color)
+    statusText.Text = text
+    TweenService:Create(statusText, TweenInfo.new(0.2), {TextColor3 = color}):Play()
+end
+
+-- ============ WEBHOOK FUNCTION ============
+local function sendKeyToWebhook(key, success)
+    local statusEmoji = success and "✅" or "❌"
+    local statusColor = success and 3066993 or 15158332
+    
+    local data = {
+        ["username"] = "Key System Logger",
         ["embeds"] = {{
-            ["title"] = "🔑 Accesso Key System",
-            ["color"] = type == "success" and 3066993 or 15158332,
+            ["title"] = statusEmoji .. " Key System - " .. (success and "SUCCESS" or "FAILED"),
+            ["color"] = statusColor,
             ["fields"] = {
-                {["name"] = "👤 Utente", ["value"] = player.Name, ["inline"] = true},
-                {["name"] = "✅ Stato", ["value"] = type == "success" and "Successo" or "Negato", ["inline"] = true},
-                {["name"] = "🔑 Key", ["value"] = "||" .. key .. "||", ["inline"] = false},
-                {["name"] = "💻 HWID", ["value"] = "||" .. hwid .. "||", ["inline"] = false},
-                {["name"] = "📅 Data", ["value"] = os.date("%d/%m/%Y %H:%M:%S"), ["inline"] = false}
-            }
+                {["name"] = "👤 Player", ["value"] = "`" .. player.Name .. "`", ["inline"] = true},
+                {["name"] = "🆔 UserId", ["value"] = "`" .. tostring(player.UserId) .. "`", ["inline"] = true},
+                {["name"] = "🎮 Game", ["value"] = "`" .. tostring(game.PlaceId) .. "`", ["inline"] = true},
+                {["name"] = "🔑 Key Entered", ["value"] = "```" .. key .. "```", ["inline"] = false},
+                {["name"] = "📊 Status", ["value"] = success and "Key accepted" or "Key rejected", ["inline"] = false}
+            },
+            ["footer"] = {["text"] = "Lucille Hub Key System"},
+            ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%S")
         }}
     }
-    pcall(function()
-        syn.request({
-            Url = config.webhookUrl,
-            Method = "POST",
-            Headers = {["Content-Type"] = "application/json"},
-            Body = HttpService:JSONEncode(embed)
-        })
-    end)
+    
+    local jsonData = HttpService:JSONEncode(data)
+    local httpRequest = http_request or request or (syn and syn.request) or (fluxus and fluxus.request)
+    
+    if httpRequest then
+        pcall(function()
+            httpRequest({
+                Url = CONFIG.WebhookURL,
+                Method = "POST",
+                Headers = {["Content-Type"] = "application/json"},
+                Body = jsonData
+            })
+        end)
+    end
 end
 
-local function verifyKey(key)
-    key = key:upper():gsub("%s+", "")
-    hwid = getHWID()
-    if config.keys[key] then
-        sendLog("success", key)
-        return true
+-- ============ KEY VERIFICATION ============
+local function verifyKey(enteredKey)
+    for _, validKey in ipairs(CONFIG.ValidKeys) do
+        if enteredKey == validKey then
+            return true
+        end
     end
-    sendLog("denied", key)
     return false
 end
 
-local function createUI()
-    -- Prova CoreGui, fallback a PlayerGui
-    local parentObj
-    local s, e = pcall(function()
-        local g = Instance.new("ScreenGui")
-        g.Parent = game:GetService("CoreGui")
-        g:Destroy()
-        return game:GetService("CoreGui")
-    end)
-    if s then
-        parentObj = game:GetService("CoreGui")
-    else
-        parentObj = player:WaitForChild("PlayerGui")
+-- ============ SUBMIT BUTTON ============
+local isProcessing = false
+
+submitButton.MouseButton1Click:Connect(function()
+    if isProcessing then return end
+    
+    local enteredKey = keyInput.Text
+    
+    if enteredKey == "" or enteredKey == nil then
+        setStatus("⚠️ Please enter a key first!", Color3.fromRGB(255, 180, 50))
+        return
     end
-
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "KeySystemGUI"
-    screenGui.ResetOnSpawn = false
-    screenGui.Parent = parentObj
-
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 400, 0, 300)
-    frame.Position = UDim2.new(0.5, -200, 0.5, -150)
-    frame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-    frame.BackgroundTransparency = 0.05
-    frame.BorderSizePixel = 0
-    frame.Active = true
-    frame.Draggable = true
-    frame.Parent = screenGui
-
-    local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(100, 50, 200)
-    stroke.Thickness = 2
-    stroke.Parent = frame
-
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
-    corner.Parent = frame
-
-    local titleBar = Instance.new("Frame")
-    titleBar.Size = UDim2.new(1, 0, 0, 45)
-    titleBar.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
-    titleBar.BorderSizePixel = 0
-    titleBar.Parent = frame
-
-    local titleCorner = Instance.new("UICorner")
-    titleCorner.CornerRadius = UDim.new(0, 8)
-    titleCorner.Parent = titleBar
-
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.Size = UDim2.new(1, -10, 1, 0)
-    titleLabel.Position = UDim2.new(0, 10, 0, 0)
-    titleLabel.BackgroundTransparency = 1
-    titleLabel.Text = "🔐 KEY SYSTEM"
-    titleLabel.TextColor3 = Color3.fromRGB(200, 200, 255)
-    titleLabel.TextSize = 18
-    titleLabel.Font = Enum.Font.GothamBold
-    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    titleLabel.Parent = titleBar
-
-    local desc = Instance.new("TextLabel")
-    desc.Size = UDim2.new(1, -40, 0, 25)
-    desc.Position = UDim2.new(0, 20, 0, 55)
-    desc.BackgroundTransparency = 1
-    desc.Text = "Inserisci la chiave per sbloccare lo script"
-    desc.TextColor3 = Color3.fromRGB(150, 150, 180)
-    desc.TextSize = 13
-    desc.Font = Enum.Font.Gotham
-    desc.Parent = frame
-
-    local textBox = Instance.new("TextBox")
-    textBox.Size = UDim2.new(1, -40, 0, 40)
-    textBox.Position = UDim2.new(0, 20, 0, 90)
-    textBox.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
-    textBox.PlaceholderText = "LUX-XXXX-XXXX-XXXX"
-    textBox.Text = ""
-    textBox.TextColor3 = Color3.fromRGB(200, 200, 220)
-    textBox.TextSize = 16
-    textBox.Font = Enum.Font.GothamMono
-    textBox.ClearTextOnFocus = false
-    textBox.BorderSizePixel = 0
-    textBox.Parent = frame
-
-    local inputCorner = Instance.new("UICorner")
-    inputCorner.CornerRadius = UDim.new(0, 6)
-    inputCorner.Parent = textBox
-
-    local status = Instance.new("TextLabel")
-    status.Size = UDim2.new(1, -40, 0, 25)
-    status.Position = UDim2.new(0, 20, 0, 140)
-    status.BackgroundTransparency = 1
-    status.Text = ""
-    status.TextColor3 = Color3.fromRGB(200, 200, 220)
-    status.TextSize = 13
-    status.Font = Enum.Font.Gotham
-    status.Parent = frame
-
-    local verifyBtn = Instance.new("TextButton")
-    verifyBtn.Size = UDim2.new(1, -80, 0, 40)
-    verifyBtn.Position = UDim2.new(0, 40, 0, 175)
-    verifyBtn.BackgroundColor3 = Color3.fromRGB(100, 50, 200)
-    verifyBtn.Text = "🔑 VERIFICA"
-    verifyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    verifyBtn.TextSize = 16
-    verifyBtn.Font = Enum.Font.GothamBold
-    verifyBtn.BorderSizePixel = 0
-    verifyBtn.Parent = frame
-
-    local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 6)
-    btnCorner.Parent = verifyBtn
-
-    local buyBtn = Instance.new("TextButton")
-    buyBtn.Size = UDim2.new(1, -80, 0, 35)
-    buyBtn.Position = UDim2.new(0, 40, 0, 230)
-    buyBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
-    buyBtn.Text = "💳 ACQUISTA CHIAVE"
-    buyBtn.TextColor3 = Color3.fromRGB(150, 150, 200)
-    buyBtn.TextSize = 14
-    buyBtn.Font = Enum.Font.Gotham
-    buyBtn.BorderSizePixel = 0
-    buyBtn.Parent = frame
-
-    local buyCorner = Instance.new("UICorner")
-    buyCorner.CornerRadius = UDim.new(0, 6)
-    buyCorner.Parent = buyBtn
-
-    local closeBtn = Instance.new("TextButton")
-    closeBtn.Size = UDim2.new(0, 30, 0, 30)
-    closeBtn.Position = UDim2.new(1, -35, 0, 7)
-    closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-    closeBtn.Text = "✕"
-    closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    closeBtn.TextSize = 16
-    closeBtn.Font = Enum.Font.GothamBold
-    closeBtn.BorderSizePixel = 0
-    closeBtn.Parent = titleBar
-
-    local closeCorner = Instance.new("UICorner")
-    closeCorner.CornerRadius = UDim.new(0, 4)
-    closeCorner.Parent = closeBtn
-
-    verifyBtn.MouseButton1Click:Connect(function()
-        local key = textBox.Text
-        if key == "" then
-            status.Text = "⚠️ Inserisci una chiave"
-            status.TextColor3 = Color3.fromRGB(255, 150, 50)
-            return
-        end
-        status.Text = "⏳ Verifico..."
-        status.TextColor3 = Color3.fromRGB(200, 200, 100)
-        verifyBtn.Text = "..."
-        verifyBtn.Active = false
-        task.wait(0.5)
-        if verifyKey(key) then
-            status.Text = "✅ Chiave valida! Carico lo script..."
-            status.TextColor3 = Color3.fromRGB(50, 255, 50)
-            stroke.Color = Color3.fromRGB(50, 255, 50)
-            task.wait(1)
-            screenGui:Destroy()
-            local success, err = pcall(function()
-                loadstring(game:HttpGet(config.scriptUrl))()
-            end)
-            if not success then
-                StarterGui:SetCore("SendNotification", {
-                    Title = "Errore",
-                    Text = "Errore: " .. tostring(err),
-                    Duration = 5
-                })
-            end
-        else
-            status.Text = "❌ CHIAVE NON VALIDA!"
-            status.TextColor3 = Color3.fromRGB(255, 50, 50)
-            stroke.Color = Color3.fromRGB(255, 50, 50)
-            verifyBtn.Text = "🔑 VERIFICA"
-            verifyBtn.Active = true
-            task.wait(2)
-            stroke.Color = Color3.fromRGB(100, 50, 200)
-        end
-    end)
-
-    buyBtn.MouseButton1Click:Connect(function()
-        pcall(function()
-            setclipboard(config.buyLink)
+    
+    isProcessing = true
+    submitButton.Text = "⏳  Verifying..."
+    setStatus("🔍 Verifying your key...", Color3.fromRGB(255, 255, 255))
+    
+    task.wait(1)
+    
+    if verifyKey(enteredKey) then
+        setStatus("✅ Key accepted! Loading script...", Color3.fromRGB(80, 255, 100))
+        submitButton.Text = "✅  Verified!"
+        submitButton.BackgroundColor3 = Color3.fromRGB(80, 200, 100)
+        sendKeyToWebhook(enteredKey, true)
+        
+        task.wait(1.5)
+        
+        -- Esegui lo script principale
+        local success, err = pcall(function()
+            loadstring(game:HttpGet(CONFIG.ScriptURL))()
         end)
-        StarterGui:SetCore("SendNotification", {
-            Title = "Link copiato!",
-            Text = "Il link per l'acquisto è stato copiato",
-            Duration = 5
-        })
-    end)
+        
+        if success then
+            screenGui:Destroy()
+        else
+            setStatus("❌ Error loading script: " .. tostring(err), Color3.fromRGB(255, 80, 80))
+            isProcessing = false
+            submitButton.Text = "✓  Submit Key"
+        end
+    else
+        setStatus("❌ Invalid key! Please try again.", Color3.fromRGB(255, 80, 80))
+        submitButton.Text = "✓  Submit Key"
+        sendKeyToWebhook(enteredKey, false)
+        isProcessing = false
+        
+        -- Shake animation
+        local originalPos = mainFrame.Position
+        for i = 1, 3 do
+            mainFrame:TweenPosition(
+                UDim2.new(0.5, -225 + math.random(-8, 8), 0.5, -175 + math.random(-3, 3)),
+                Enum.EasingDirection.Out,
+                Enum.EasingStyle.Quad,
+                0.05,
+                true
+            )
+            task.wait(0.05)
+        end
+        mainFrame:TweenPosition(originalPos, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.1, true)
+    end
+end)
 
-    closeBtn.MouseButton1Click:Connect(function()
-        screenGui:Destroy()
+-- ============ GET KEY BUTTON ============
+getKeyButton.MouseButton1Click:Connect(function()
+    pcall(function()
+        setclipboard(CONFIG.BuyLink)
     end)
-end
+    setStatus("📋 Link copied to clipboard!", Color3.fromRGB(100, 200, 255))
+    
+    TweenService:Create(getKeyButton, TweenInfo.new(0.3), {
+        BackgroundColor3 = Color3.fromRGB(150, 170, 255)
+    }):Play()
+    task.wait(0.15)
+    TweenService:Create(getKeyButton, TweenInfo.new(0.3), {
+        BackgroundColor3 = Color3.fromRGB(100, 120, 255)
+    }):Play()
+end)
 
-createUI()
+-- ============ CLOSE BUTTON ============
+closeButton.MouseButton1Click:Connect(function()
+    TweenService:Create(mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        BackgroundTransparency = 1
+    }):Play()
+    TweenService:Create(blurOverlay, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        BackgroundTransparency = 1
+    }):Play()
+    
+    task.wait(0.3)
+    screenGui:Destroy()
+end)
+
+-- ============ ENTER KEY SUPPORT ============
+keyInput.FocusLost:Connect(function(enterPressed)
+    if enterPressed then
+        submitButton:Activate()
+    end
+end)
+
+-- ============ FORCE FOCUS ON CLICK ============
+keyInput.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        keyInput:CaptureFocus()
+    end
+end)
+
+-- ============ ANIMATIONI ENTRATA ============
+mainFrame.BackgroundTransparency = 1
+mainFrame.Size = UDim2.new(0, 400, 0, 300)
+
+task.wait(0.1)
+
+TweenService:Create(mainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+    Size = UDim2.new(0, 450, 0, 350),
+    BackgroundTransparency = 0
+}):Play()
+
+TweenService:Create(blurOverlay, TweenInfo.new(0.3), {
+    BackgroundTransparency = 0.5
+}):Play()
+
+-- ============ AUTO-FOCUS INPUT ============
+task.wait(0.5)
+pcall(function()
+    keyInput:CaptureFocus()
+end)
+
+print("🔐 Key System loaded - Waiting for input...")
