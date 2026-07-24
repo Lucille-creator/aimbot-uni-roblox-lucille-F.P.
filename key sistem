@@ -11,18 +11,18 @@
 
 local config = {
     -- 🔗 LINK al tuo script principale (quello offuscato)
-    scriptUrl = "https://raw.githubusercontent.com/Lucille-creator/esp-misc-uni-roblox-lucille-F.P./refs/heads/main/obfuscated_script-1784886062826.lua",
+    scriptUrl = "https://raw.githubusercontent.com/Lucille-creator/aimbot-uni-roblox-lucille-F.P./refs/heads/main/Aimbot.lua",
     
     -- 🎯 Metti QUI le chiavi generate
     keys = {
-        ["LUX-ABCD-1234-EFGH"] = true,
+        ["LUX-M5AJ-Q4GS-FRCS"] = true,
         ["LUX-WXYZ-5678-IJKL"] = true
         -- ↑ SOSTITUISCI con le tue chiavi generate!
     },
     
     -- 📡 WEBHOOK DISCORD (OPZIONALE)
     -- Per ricevere notifiche quando qualcuno usa una key
-    webhookUrl = "",  -- Es: "https://discord.com/api/webhooks/123456/abc-def"
+    webhookUrl = "",  -- Es: "https://discord.com/api/webhooks/1530192779572023377/p8-69Onex3e5N_JghDEgadt7gig5QV760x2AqGJ_tgueBxA9SMzhT2TwG1iLIsu8oBuN"
     
     -- ⚙️ ALTRE IMPOSTAZIONI
     enableDiscordLog = false,  -- Metti true per attivare log Discord
